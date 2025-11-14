@@ -1,0 +1,75 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Environnement virtuel
+venv/
+ENV/
+env/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Configuration locale
+.env
+.env.local
+.env.*.local
+
+# Base de données
+*.db
+*.sqlite
+*.sqlite3
+data/
+!data/.gitkeep
+
+# Cache
+.cache/
+*.cache
+
+# Logs
+*.log
+logs/
+
+# Fichiers temporaires
+*.tmp
+*.temp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Uploads (si applicable)
+uploads/
+temp/
+
+# Node modules (si applicable)
+node_modules/
+npm-debug.log

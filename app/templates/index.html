@@ -1,0 +1,3174 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QUANTUM MIND - AI Research Assistant</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --secondary: #4f46e5;
+            --accent: #ec4899;
+            --bg-light: #f8fafc;
+            --bg-dark: #020617;
+            --surface: rgba(255, 255, 255, 0.78);
+            --surface-dark: rgba(15, 23, 42, 0.78);
+            --text-light: #0f172a;
+            --text-dark: #e2e8f0;
+            --border: rgba(148, 163, 184, 0.24);
+            --border-dark: rgba(148, 163, 184, 0.32);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background:
+                radial-gradient(circle at 5% 10%, rgba(99, 102, 241, 0.28), transparent 55%),
+                radial-gradient(circle at 95% 90%, rgba(236, 72, 153, 0.22), transparent 60%),
+                var(--bg-light);
+            background-size: 200% 200%;
+            color: var(--text-light);
+            transition: background-color 0.3s, color 0.3s;
+            min-height: 100vh;
+            position: relative;
+            animation: gradientDrift 28s ease-in-out infinite;
+        }
+
+        body::before,
+        body::after {
+            content: '';
+            position: fixed;
+            width: 360px;
+            height: 360px;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.25;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        body::before {
+            top: 5%;
+            left: 10%;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.65), transparent 70%);
+            animation: orbDrift 22s ease-in-out infinite;
+        }
+
+        body::after {
+            bottom: 8%;
+            right: 12%;
+            background: radial-gradient(circle, rgba(236, 72, 153, 0.48), transparent 70%);
+            animation: orbDrift 26s ease-in-out infinite reverse;
+        }
+
+        /* Particules flottantes dynamiques */
+        .particle {
+            position: fixed;
+            width: 4px;
+            height: 4px;
+            background: var(--primary);
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0.3;
+            z-index: -1;
+            animation: particleFloat 15s infinite ease-in-out;
+        }
+
+        .particle:nth-child(2) { animation-delay: -2s; animation-duration: 18s; }
+        .particle:nth-child(3) { animation-delay: -4s; animation-duration: 22s; }
+        .particle:nth-child(4) { animation-delay: -6s; animation-duration: 16s; }
+        .particle:nth-child(5) { animation-delay: -8s; animation-duration: 20s; }
+
+        /* Positionnement spécifique des particules */
+        .particle-1 { left: 10%; width: 3px; height: 3px; }
+        .particle-2 { left: 25%; width: 5px; height: 5px; background: var(--accent); }
+        .particle-3 { left: 50%; width: 4px; height: 4px; }
+        .particle-4 { left: 75%; width: 6px; height: 6px; background: var(--accent); }
+        .particle-5 { left: 90%; width: 3px; height: 3px; }
+
+        @keyframes particleFloat {
+            0% {
+                transform: translate(0, 100vh) scale(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.6;
+                transform: translate(20px, 80vh) scale(1);
+            }
+            90% {
+                opacity: 0.6;
+                transform: translate(-20px, 10vh) scale(1);
+            }
+            100% {
+                transform: translate(0, -10vh) scale(0);
+                opacity: 0;
+            }
+        }
+
+        body.dark-mode {
+            background:
+                radial-gradient(circle at 10% 0%, rgba(99, 102, 241, 0.35), transparent 55%),
+                radial-gradient(circle at 100% 80%, rgba(236, 72, 153, 0.25), transparent 65%),
+                var(--bg-dark);
+            color: var(--text-dark);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .text-muted {
+            color: #64748b;
+        }
+
+        body.dark-mode .text-muted {
+            color: #cbd5f5;
+        }
+
+        .container {
+            display: flex;
+            height: calc(100vh - 48px);
+            max-height: 1200px;
+            width: min(1200px, 100% - 48px);
+            margin: 24px auto;
+            overflow: hidden;
+            border-radius: 24px;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+            -webkit-backdrop-filter: blur(24px);
+            backdrop-filter: blur(24px);
+            background: rgba(255, 255, 255, 0.45);
+            opacity: 0;
+            transform: translateY(32px) scale(0.985);
+            transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+        }
+
+        .container:hover {
+            box-shadow: 0 32px 80px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+        }
+
+        body.page-ready .container {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 300px;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s;
+            overflow-y: auto;
+        }
+
+        body.dark-mode .sidebar {
+            background: var(--surface-dark);
+            border-right-color: var(--border-dark);
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+        }
+
+        body.dark-mode .sidebar-header {
+            border-bottom-color: var(--border-dark);
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: bold;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-align: center;
+        }
+
+        .logo i {
+            font-size: 28px;
+        }
+
+        .sidebar-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: transform 0.3s, box-shadow 0.3s, background-position 0.6s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            background-size: 220% 220%;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary:hover {
+            filter: brightness(1.05);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(99, 102, 241, 0.24);
+            background-position: 100% 0;
+        }
+
+        .btn-icon {
+            background: transparent;
+            color: var(--text-light);
+            padding: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-icon::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(99, 102, 241, 0.12);
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .btn-icon:hover::before {
+            opacity: 1;
+        }
+
+        .btn-full-width {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .mt-2 {
+            margin-top: 10px;
+        }
+
+        body.dark-mode .btn-icon {
+            color: var(--text-dark);
+        }
+
+        .btn-icon:hover {
+            background: var(--bg-light);
+        }
+
+        body.dark-mode .btn-icon:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .sidebar-footer {
+            padding: 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        body.dark-mode .sidebar-footer {
+            border-top-color: var(--border-dark);
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        .conversations-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .conversation-item {
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        body.dark-mode .conversation-item {
+            background: rgba(15, 23, 42, 0.4);
+        }
+
+        .conversation-item:hover {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+            box-shadow: 0 10px 24px rgba(99, 102, 241, 0.25);
+        }
+
+        .conversation-item.active {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+        }
+
+        .conversation-delete {
+            background: none;
+            border: none;
+            color: inherit;
+            cursor: pointer;
+            padding: 4px 8px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .conversation-item:hover .conversation-delete {
+            opacity: 1;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--surface);
+            -webkit-backdrop-filter: blur(18px);
+            backdrop-filter: blur(18px);
+        }
+
+        body.dark-mode .main-content {
+            background: var(--surface-dark);
+        }
+
+        /* Auth Screen */
+        .auth-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+        }
+
+        .auth-card {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .auth-card h1 {
+            margin-bottom: 8px;
+            color: var(--text-light);
+        }
+
+        .auth-card p {
+            color: #64748b;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+        }
+
+        .form-group button {
+            width: 100%;
+            padding: 10px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .form-group button:hover {
+            background: var(--secondary);
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+            color: #64748b;
+            padding: 40px 20px;
+        }
+
+        body.dark-mode .empty-state {
+            color: var(--text-dark);
+        }
+
+        .empty-state-icon {
+            font-size: 80px;
+            margin-bottom: 24px;
+            display: inline-block;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: logoPulse 3s ease-in-out infinite;
+        }
+
+        .empty-state p {
+            font-size: 32px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 12px;
+        }
+
+        .empty-state small {
+            font-size: 16px;
+            color: #64748b;
+            max-width: 500px;
+        }
+
+        body.dark-mode .empty-state small {
+            color: rgba(226, 232, 240, 0.7);
+        }
+
+        .temperature-value {
+            margin-left: 8px;
+        }
+
+        .toggle-form {
+            text-align: center;
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .toggle-form a {
+            color: var(--primary);
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        /* Chat Interface */
+        .chat-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--surface);
+        }
+
+        body.dark-mode .chat-header {
+            border-bottom-color: var(--border-dark);
+            background: var(--surface-dark);
+        }
+
+        .chat-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .chat-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            scroll-behavior: smooth;
+        }
+
+        /* Scrollbar personnalisée */
+        .chat-messages::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: rgba(148, 163, 184, 0.1);
+            border-radius: 4px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, var(--primary), var(--accent));
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, var(--secondary), var(--primary));
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.3);
+            border-radius: 3px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.5);
+        }
+
+        .message {
+            display: flex;
+            gap: 12px;
+            animation: messageSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            transform-origin: left center;
+        }
+
+        .message.user {
+            transform-origin: right center;
+        }
+
+        @keyframes messageSlideIn {
+            0% {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Indicateur de frappe animé */
+        .typing-indicator {
+            display: inline-flex;
+            gap: 4px;
+            padding: 12px 16px;
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 16px;
+            align-items: center;
+        }
+
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            background: var(--primary);
+            border-radius: 50%;
+            animation: typingBounce 1.4s infinite ease-in-out;
+        }
+
+        .typing-indicator span:nth-child(1) { animation-delay: 0s; }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typingBounce {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.7;
+            }
+            30% {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
+        }
+
+        @keyframes gradientDrift {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        @keyframes orbDrift {
+            0% {
+                transform: translate3d(0, 0, 0) scale(1);
+            }
+            50% {
+                transform: translate3d(0, -40px, 0) scale(1.05);
+            }
+            100% {
+                transform: translate3d(0, 0, 0) scale(1);
+            }
+        }
+
+        @keyframes shimmerFlow {
+            0% {
+                background-position: -200px 0;
+            }
+            100% {
+                background-position: 200px 0;
+            }
+        }
+
+        @keyframes modalReveal {
+            0% {
+                transform: translateY(30px) scale(0.96);
+                opacity: 0;
+            }
+            100% {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* Effet shimmer pour chargement */
+        .shimmer {
+            background: linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.4) 50%,
+                rgba(255, 255, 255, 0) 100%
+            );
+            background-size: 200% 100%;
+            animation: shimmerFlow 2s infinite;
+        }
+
+        .loading-skeleton {
+            background: linear-gradient(
+                90deg,
+                rgba(99, 102, 241, 0.1) 25%,
+                rgba(236, 72, 153, 0.1) 50%,
+                rgba(99, 102, 241, 0.1) 75%
+            );
+            background-size: 200% 100%;
+            animation: shimmerFlow 1.5s infinite;
+            border-radius: 8px;
+        }
+
+        /* Modal améliorée */
+        .modal.active {
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.active .modal-content {
+            animation: modalReveal 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Effet ripple pour boutons */
+        .btn {
+            position: relative;
+            overflow: hidden;
+            transform: translateZ(0);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn:active::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.25);
+        }
+
+        .btn:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0px) rotate(0deg);
+            }
+            50% {
+                transform: translateY(-12px) rotate(2deg);
+            }
+            100% {
+                transform: translateY(0px) rotate(0deg);
+            }
+        }
+
+        /* Cartes de conversation animées */
+        .conversation-item {
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            transform: translateX(0);
+        }
+
+        .conversation-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(180deg, var(--primary), var(--accent));
+            transform: scaleY(0);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            border-radius: 0 2px 2px 0;
+        }
+
+        .conversation-item:hover::before {
+            transform: scaleY(1);
+        }
+
+        .conversation-item:hover {
+            transform: translateX(6px);
+            background: rgba(99, 102, 241, 0.08);
+        }
+
+        .conversation-item.active {
+            background: rgba(99, 102, 241, 0.12);
+            transform: translateX(6px);
+        }
+
+        .conversation-item.active::before {
+            transform: scaleY(1);
+        }
+
+        @keyframes pulseGlow {
+            0% {
+                opacity: 0.4;
+                transform: scale(0.95);
+            }
+            50% {
+                opacity: 0.9;
+                transform: scale(1.05);
+            }
+            100% {
+                opacity: 0.4;
+                transform: scale(0.95);
+            }
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .message.user .message-avatar {
+            background: var(--accent);
+        }
+
+        .message.assistant .message-avatar {
+            background: var(--primary);
+        }
+
+        .message.loading .message-avatar {
+            animation: pulseGlow 2.2s ease-in-out infinite;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 8px;
+            line-height: 1.5;
+        }
+
+        .message.loading .message-content {
+            border-radius: 16px;
+            background: rgba(148, 163, 184, 0.2);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        body.dark-mode .message.loading .message-content {
+            background: rgba(71, 85, 105, 0.35);
+        }
+
+        .message.loading .loading-line {
+            height: 12px;
+            border-radius: 999px;
+            background: linear-gradient(120deg, rgba(255, 255, 255, 0.25), rgba(148, 163, 184, 0.3), rgba(255, 255, 255, 0.25));
+            background-size: 200% 100%;
+            animation: shimmerFlow 1.4s linear infinite;
+            width: 100%;
+        }
+
+        .message.loading .loading-line.short {
+            width: 65%;
+        }
+
+        .message.loading .loading-line.long {
+            width: 90%;
+        }
+
+        .message.user:not(.loading) .message-content {
+            background: var(--primary);
+            color: white;
+            border-radius: 16px 16px 4px 16px;
+        }
+
+        .message.assistant:not(.loading) .message-content {
+            background: var(--bg-light);
+            color: var(--text-light);
+            border-radius: 16px 16px 16px 4px;
+        }
+
+        body.dark-mode .message.assistant:not(.loading) .message-content {
+            background: rgba(30, 41, 59, 0.75);
+            color: var(--text-dark);
+            border-color: rgba(148, 163, 184, 0.25);
+        }
+
+        .message-content code {
+            background: rgba(15, 23, 42, 0.12);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        body.dark-mode .message-content code {
+            background: rgba(226, 232, 240, 0.18);
+        }
+
+        .message-content pre {
+            background: rgba(15, 23, 42, 0.08);
+            padding: 14px;
+            border-radius: 10px;
+            overflow-x: auto;
+            margin: 10px 0;
+            border: 1px solid rgba(148, 163, 184, 0.24);
+        }
+
+        body.dark-mode .message-content pre {
+            background: rgba(15, 23, 42, 0.6);
+            border-color: rgba(148, 163, 184, 0.2);
+        }
+
+        /* Hero + Stats */
+        .chat-hero {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+            padding: 24px 24px 0;
+        }
+
+        .chat-hero-text h2 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .chat-hero-text p {
+            color: #64748b;
+            font-size: 14px;
+            max-width: 420px;
+        }
+
+        body.dark-mode .chat-hero-text p {
+            color: rgba(226, 232, 240, 0.78);
+        }
+
+        .chat-hero-art {
+            position: relative;
+            width: 120px;
+            height: 120px;
+        }
+
+        .chat-hero-art .glow-orb {
+            position: absolute;
+            inset: 0;
+            border-radius: 28px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.7), rgba(236, 72, 153, 0.6));
+            box-shadow: 0 20px 45px rgba(99, 102, 241, 0.32);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .chat-hero-art .pulse-ring {
+            position: absolute;
+            inset: -18px;
+            border: 1px dashed rgba(99, 102, 241, 0.5);
+            border-radius: 32px;
+            animation: pulseGlow 7s ease-in-out infinite;
+        }
+
+        .chat-stats {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+            padding: 24px;
+        }
+
+        /* Auth Screen Animations */
+        .auth-logo {
+            position: relative;
+            width: 140px;
+            height: 140px;
+            margin: 0 auto 32px;
+            perspective: 1000px;
+        }
+
+        .logo-ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 2px solid;
+            animation: logoRotate 20s linear infinite;
+        }
+
+        .logo-ring-1 {
+            inset: 0;
+            border-color: rgba(99, 102, 241, 0.3);
+            animation-duration: 15s;
+        }
+
+        .logo-ring-2 {
+            inset: 15px;
+            border-color: rgba(236, 72, 153, 0.3);
+            animation-duration: 20s;
+            animation-direction: reverse;
+        }
+
+        .logo-ring-3 {
+            inset: 30px;
+            border-color: rgba(14, 165, 233, 0.3);
+            animation-duration: 25s;
+        }
+
+        .logo-core {
+            position: absolute;
+            inset: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 50%;
+            box-shadow: 0 20px 60px rgba(99, 102, 241, 0.4), 0 0 40px rgba(236, 72, 153, 0.3);
+            animation: logoPulse 3s ease-in-out infinite;
+        }
+
+        .logo-core i {
+            font-size: 32px;
+            color: white;
+            animation: logoFloat 2s ease-in-out infinite;
+        }
+
+        @keyframes logoRotate {
+            0% { transform: rotate(0deg) rotateY(0deg); }
+            50% { transform: rotate(180deg) rotateY(20deg); }
+            100% { transform: rotate(360deg) rotateY(0deg); }
+        }
+
+        @keyframes logoPulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 20px 60px rgba(99, 102, 241, 0.4); }
+            50% { transform: scale(1.05); box-shadow: 0 25px 80px rgba(236, 72, 153, 0.6); }
+        }
+
+        @keyframes logoFloat {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-4px); }
+        }
+
+        .auth-title {
+            font-size: 32px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+            animation: titleSlide 0.6s ease-out;
+        }
+
+        /* Logo Brain simple */
+        .auth-logo-simple {
+            margin: 0 auto 24px;
+            width: 100px;
+            height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 50%;
+            box-shadow: 0 20px 60px rgba(99, 102, 241, 0.4), 0 0 40px rgba(236, 72, 153, 0.3);
+            animation: logoPulse 3s ease-in-out infinite;
+        }
+
+        .auth-logo-simple i {
+            font-size: 48px;
+            color: white;
+        }
+
+        .auth-subtitle {
+            font-size: 15px;
+            color: #64748b;
+            margin-bottom: 40px;
+            animation: titleSlide 0.8s ease-out;
+        }
+
+        @keyframes titleSlide {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .auth-form {
+            animation: formSlide 0.5s ease-out;
+        }
+
+        @keyframes formSlide {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .input-interactive {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-bottom: 2px solid transparent;
+        }
+
+        .input-interactive:focus {
+            transform: translateY(-2px);
+            border-bottom-color: var(--primary);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.15);
+        }
+
+        .input-underline {
+            height: 2px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+            margin-top: -2px;
+        }
+
+        .input-interactive:focus + .input-underline {
+            transform: scaleX(1);
+        }
+
+        .btn-auth {
+            position: relative;
+            overflow: hidden;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-auth:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 35px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-auth:active {
+            transform: translateY(-1px) scale(0.98);
+        }
+
+        .btn-shimmer {
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shimmerMove 3s infinite;
+        }
+
+        @keyframes shimmerMove {
+            0% { left: -100%; }
+            50%, 100% { left: 100%; }
+        }
+
+        .btn-text {
+            position: relative;
+            z-index: 1;
+        }
+
+        .link-interactive {
+            position: relative;
+            color: var(--primary);
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .link-interactive::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            transition: width 0.3s ease;
+        }
+
+        .link-interactive:hover {
+            color: var(--accent);
+            transform: translateX(2px);
+        }
+
+        .link-interactive:hover::after {
+            width: 100%;
+        }
+
+        .auth-features {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid rgba(148, 163, 184, 0.2);
+            animation: featuresSlide 1s ease-out;
+        }
+
+        @keyframes featuresSlide {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .feature-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--primary);
+            transition: all 0.3s ease;
+        }
+
+        .feature-badge:hover {
+            background: rgba(99, 102, 241, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .feature-badge i {
+            font-size: 14px;
+        }
+
+        body.dark-mode .auth-subtitle {
+            color: rgba(226, 232, 240, 0.7);
+        }
+
+        body.dark-mode .feature-badge {
+            background: rgba(99, 102, 241, 0.15);
+            color: rgba(99, 102, 241, 0.9);
+        }
+
+        body.dark-mode .feature-badge:hover {
+            background: rgba(99, 102, 241, 0.25);
+        }
+
+        .form-group label i {
+            margin-right: 6px;
+            color: var(--primary);
+            opacity: 0.7;
+        }
+
+        /* Animations d'interaction auth */
+        .auth-card {
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.6s ease;
+        }
+
+        .form-group.focused label {
+            color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .input-interactive.has-value {
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        .focus-ripple {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.3), transparent);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            animation: focusRippleAnim 0.6s ease-out;
+            pointer-events: none;
+        }
+
+        @keyframes focusRippleAnim {
+            to {
+                width: 300px;
+                height: 300px;
+                opacity: 0;
+            }
+        }
+
+        .button-ripple {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            animation: buttonRippleAnim 0.6s ease-out;
+            pointer-events: none;
+        }
+
+        @keyframes buttonRippleAnim {
+            to {
+                width: 400px;
+                height: 400px;
+                opacity: 0;
+            }
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), #7c3aed);
+        }
+
+        .btn-accent {
+            background: linear-gradient(135deg, var(--accent), #f97316);
+        }
+
+        /* Neural Network Background */
+        .neural-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.15;
+        }
+
+        body.dark-mode .neural-background {
+            opacity: 0.25;
+        }
+
+        /* Typing Effect */
+        .typing-cursor {
+            animation: blink 1s infinite;
+            color: var(--primary);
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        /* Password Strength Indicator */
+        .password-strength {
+            margin-top: 8px;
+            display: none;
+        }
+
+        .password-strength.active {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .strength-bar {
+            height: 4px;
+            background: rgba(148, 163, 184, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 6px;
+        }
+
+        .strength-fill {
+            height: 100%;
+            width: 0;
+            transition: all 0.3s ease;
+            border-radius: 4px;
+        }
+
+        .strength-fill.weak {
+            width: 33%;
+            background: linear-gradient(90deg, #ef4444, #f87171);
+        }
+
+        .strength-fill.medium {
+            width: 66%;
+            background: linear-gradient(90deg, #f59e0b, #fbbf24);
+        }
+
+        .strength-fill.strong {
+            width: 100%;
+            background: linear-gradient(90deg, #10b981, #34d399);
+        }
+
+        .strength-text {
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .strength-text.weak {
+            color: #ef4444;
+        }
+
+        .strength-text.medium {
+            color: #f59e0b;
+        }
+
+        .strength-text.strong {
+            color: #10b981;
+        }
+
+        /* Password Toggle Button */
+        .password-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .password-input-wrapper input {
+            padding-right: 45px;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            background: none;
+            border: none;
+            color: #64748b;
+            cursor: pointer;
+            padding: 8px;
+            transition: all 0.3s ease;
+            border-radius: 4px;
+        }
+
+        .toggle-password:hover {
+            color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .toggle-password i {
+            font-size: 16px;
+        }
+
+        /* Auth Slogan */
+        .auth-slogan {
+            font-size: 15px;
+            color: #6366f1;
+            margin-bottom: 32px;
+            min-height: 24px;
+            font-style: italic;
+            font-weight: 600;
+            opacity: 0;
+            animation: fadeInSlogan 1s ease 1.8s forwards;
+            text-align: center;
+        }
+
+        @keyframes fadeInSlogan {
+            0% { 
+                opacity: 0; 
+                transform: translateY(10px);
+            }
+            100% { 
+                opacity: 1; 
+                transform: translateY(0);
+            }
+        }
+
+        body.dark-mode .auth-slogan {
+            color: rgba(99, 102, 241, 0.9);
+        }
+
+        /* Auth Footer */
+        .auth-footer {
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(148, 163, 184, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+
+        .version-badge {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+        }
+
+        .footer-text {
+            font-weight: 500;
+        }
+
+        /* Auth Progress Bar */
+        .auth-progress {
+            margin-top: 12px;
+            height: 3px;
+            background: rgba(148, 163, 184, 0.2);
+            border-radius: 3px;
+            overflow: hidden;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .auth-progress.active {
+            opacity: 1;
+        }
+
+        .auth-progress-bar {
+            height: 100%;
+            width: 0;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            animation: progressFlow 2s ease-in-out infinite;
+        }
+
+        @keyframes progressFlow {
+            0% { width: 0%; }
+            50% { width: 70%; }
+            100% { width: 100%; }
+        }
+
+        /* Shake Animation for Errors */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+            20%, 40%, 60%, 80% { transform: translateX(10px); }
+        }
+
+        .shake {
+            animation: shake 0.5s ease;
+        }
+
+        .stat-card {
+            padding: 18px 20px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 18px 36px rgba(99, 102, 241, 0.18);
+        }
+
+        body.dark-mode .stat-card {
+            background: rgba(15, 23, 42, 0.78);
+            border-color: rgba(148, 163, 184, 0.25);
+        }
+
+        .stat-card span {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #64748b;
+        }
+
+        body.dark-mode .stat-card span {
+            color: rgba(148, 163, 184, 0.85);
+        }
+
+        .stat-card strong {
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .chat-stats .trend {
+            font-size: 12px;
+            color: #14b8a6;
+        }
+
+        body.dark-mode .chat-stats .trend {
+            color: #34d399;
+        }
+
+        /* Input Area */
+        .chat-input-area {
+            padding: 20px 24px 24px;
+            border-top: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.75);
+        }
+
+        body.dark-mode .chat-input-area {
+            border-top-color: var(--border-dark);
+            background: rgba(2, 6, 23, 0.7);
+        }
+
+        .quick-prompts {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .quick-prompts button {
+            padding: 6px 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            background: rgba(99, 102, 241, 0.08);
+            color: var(--primary);
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s ease;
+        }
+
+        .quick-prompts button:hover {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(236, 72, 153, 0.2));
+            transform: translateY(-2px);
+        }
+
+        .input-group {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 12px;
+            align-items: stretch;
+        }
+
+        .input-group input,
+        .input-group textarea {
+            width: 100%;
+            padding: 14px 18px;
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            border-radius: 20px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.9);
+            font-family: inherit;
+            line-height: 1.5;
+        }
+
+        .input-group textarea {
+            min-height: 56px;
+            max-height: 180px;
+            resize: vertical;
+        }
+
+        body.dark-mode .input-group input,
+        body.dark-mode .input-group textarea {
+            background: rgba(15, 23, 42, 0.75);
+            border-color: rgba(148, 163, 184, 0.4);
+            color: var(--text-dark);
+        }
+
+        .input-group input:focus,
+        .input-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+        }
+
+        .input-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-actions button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            border-radius: 18px;
+            border: none;
+            cursor: pointer;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            color: white;
+            font-weight: 600;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .input-actions button.secondary-action {
+            background: rgba(99, 102, 241, 0.12);
+            color: var(--primary);
+        }
+
+        .input-actions button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 32px rgba(99, 102, 241, 0.25);
+        }
+
+        .input-hint {
+            margin-top: 12px;
+            font-size: 12px;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        body.dark-mode .input-hint {
+            color: rgba(226, 232, 240, 0.7);
+        }
+
+        /* Responsive Layout */
+        @media (max-width: 1200px) {
+            .container {
+                width: min(1100px, 100% - 32px);
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .container {
+                width: 100%;
+                margin: 0;
+                border-radius: 0;
+                height: 100vh;
+            }
+
+            .chat-hero {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+
+            .chat-stats {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                height: auto;
+                min-height: 100vh;
+            }
+
+            .sidebar {
+                width: 100%;
+                max-height: 38vh;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+
+            body.dark-mode .sidebar {
+                border-bottom-color: var(--border-dark);
+            }
+
+            .chat-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .chat-input-area {
+                padding: 16px;
+            }
+
+            .input-group {
+                grid-template-columns: 1fr;
+            }
+
+            .input-actions {
+                justify-content: flex-end;
+            }
+
+            .chat-hero-art {
+                width: 96px;
+                height: 96px;
+            }
+        }
+
+        @media (max-width: 520px) {
+            .quick-prompts {
+                gap: 8px;
+            }
+
+            .quick-prompts button {
+                font-size: 12px;
+                padding: 6px 10px;
+            }
+
+            .input-actions button {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        /* Modal */
+        .modal {
+            display: flex;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(2, 6, 23, 0.55);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            transition: opacity 0.35s ease, visibility 0.35s ease;
+        }
+
+        .modal.active {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            transform: translateY(24px) scale(0.97);
+            opacity: 0;
+            transition: transform 0.35s ease, opacity 0.35s ease;
+        }
+
+        .modal.active .modal-content {
+            animation: modalReveal 0.4s ease forwards;
+        }
+
+        body.dark-mode .modal-content {
+            background: var(--surface-dark);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-body {
+            max-height: 60vh;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .markdown-content p {
+            margin-bottom: 12px;
+        }
+
+        .markdown-content ul {
+            margin: 8px 0 16px 20px;
+        }
+
+        .modal-headline {
+            margin-bottom: 12px;
+        }
+
+        .message-content {
+            max-width: min(680px, 100%);
+            padding: 18px 20px;
+            border-radius: 18px;
+            background: rgba(15, 23, 42, 0.05);
+            line-height: 1.6;
+            font-size: 15px;
+            box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+            border: 1px solid rgba(148, 163, 184, 0.15);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: absolute;
+                left: -300px;
+                height: 100vh;
+                z-index: 100;
+            }
+
+            .sidebar.active {
+                left: 0;
+            }
+
+            .message-content {
+                background: rgba(255, 255, 255, 0.72);
+                color: inherit;
+                border: 1px solid rgba(148, 163, 184, 0.2);
+            }
+        }
+
+        body.dark-mode .message-content {
+            background: rgba(30, 41, 59, 0.75);
+        }
+        .loading {
+            border-color: rgba(148, 163, 184, 0.25);
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(14, 165, 233, 0.3);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        body.dark-mode ::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+
+        body.dark-mode ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+    </style>
+</head>
+<body>
+    <!-- Particules flottantes dynamiques -->
+    <div class="particle particle-1"></div>
+    <div class="particle particle-2"></div>
+    <div class="particle particle-3"></div>
+    <div class="particle particle-4"></div>
+    <div class="particle particle-5"></div>
+    
+    <div id="app">
+        <!-- Neural Network Background -->
+        <canvas id="neuralCanvas" class="neural-background"></canvas>
+        
+        <!-- Auth Screen (shown when not logged in) -->
+        <div id="authScreen" class="auth-container hidden">
+            <div class="auth-card">
+                <!-- Logo Brain -->
+                <div class="auth-logo-simple">
+                    <i class="fas fa-brain"></i>
+                </div>
+                
+                <h1 class="auth-title">
+                    <span id="typingTitle"></span><span class="typing-cursor">|</span>
+                </h1>
+                <p class="auth-slogan" id="authSlogan"></p>
+                
+                <div id="loginForm" class="auth-form">
+                    <div class="form-group">
+                        <label><i class="fas fa-user"></i> Nom d'utilisateur</label>
+                        <input type="text" id="loginUsername" placeholder="korim" class="input-interactive">
+                        <div class="input-underline"></div>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-lock"></i> Mot de passe</label>
+                        <div class="password-input-wrapper">
+                            <input type="password" id="loginPassword" placeholder="••••••••" class="input-interactive">
+                            <button type="button" class="toggle-password" onclick="togglePasswordVisibility('loginPassword')" title="Afficher/Masquer le mot de passe">
+                                <i class="fas fa-eye" id="loginPassword-icon"></i>
+                            </button>
+                        </div>
+                        <div class="input-underline"></div>
+                    </div>
+                    <div class="form-group">
+                        <button onclick="login()" class="btn-auth btn-primary" id="loginBtn">
+                            <span class="btn-text">Connexion</span>
+                            <span class="btn-shimmer"></span>
+                        </button>
+                        <div class="auth-progress" id="authProgress">
+                            <div class="auth-progress-bar"></div>
+                        </div>
+                    </div>
+                    <div class="toggle-form">
+                        Pas encore inscrit? <a onclick="toggleForm()" class="link-interactive">Créez un compte</a>
+                    </div>
+                </div>
+
+                <div id="registerForm" class="auth-form hidden">
+                    <div class="form-group">
+                        <label><i class="fas fa-user-plus"></i> Nom d'utilisateur</label>
+                        <input type="text" id="registerUsername" placeholder="Choisissez un nom unique" class="input-interactive">
+                        <div class="input-underline"></div>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-key"></i> Mot de passe</label>
+                        <div class="password-input-wrapper">
+                            <input type="password" id="registerPassword" placeholder="Min. 8 caractères" class="input-interactive" oninput="checkPasswordStrength(this.value)">
+                            <button type="button" class="toggle-password" onclick="togglePasswordVisibility('registerPassword')" title="Afficher/Masquer le mot de passe">
+                                <i class="fas fa-eye" id="registerPassword-icon"></i>
+                            </button>
+                        </div>
+                        <div class="input-underline"></div>
+                        <div class="password-strength" id="passwordStrength">
+                            <div class="strength-bar">
+                                <div class="strength-fill" id="strengthFill"></div>
+                            </div>
+                            <span class="strength-text" id="strengthText"></span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label><i class="fas fa-shield-alt"></i> Confirmer le mot de passe</label>
+                        <input type="password" id="registerPasswordConfirm" placeholder="Retapez votre mot de passe" class="input-interactive">
+                        <div class="input-underline"></div>
+                    </div>
+                    <div class="form-group">
+                        <button onclick="register()" class="btn-auth btn-accent">
+                            <span class="btn-text">Créer un compte</span>
+                            <span class="btn-shimmer"></span>
+                        </button>
+                    </div>
+                    <div class="toggle-form">
+                        Déjà inscrit? <a onclick="toggleForm()" class="link-interactive">Se connecter</a>
+                    </div>
+                </div>
+                
+                <!-- Indicateurs de sécurité -->
+                <div class="auth-features">
+                    <div class="feature-badge"><i class="fas fa-shield-check"></i> Sécurisé</div>
+                    <div class="feature-badge"><i class="fas fa-lock"></i> Chiffré</div>
+                    <div class="feature-badge"><i class="fas fa-bolt"></i> Rapide</div>
+                </div>
+                
+                <!-- Footer -->
+                <div class="auth-footer">
+                    <span class="version-badge">v1.0</span>
+                    <span class="footer-text">© 2025 QUANTUM MIND - Powered by AI</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Screen (shown when logged in) -->
+        <div id="chatScreen" class="container hidden">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <div class="logo">
+                        <i class="fas fa-atom"></i>
+                        QUANTUM MIND
+                    </div>
+                    <div class="sidebar-actions">
+                        <button class="btn btn-primary" onclick="newConversation()">
+                            <i class="fas fa-plus"></i> Nouveau
+                        </button>
+                    </div>
+                </div>
+
+                <div class="sidebar-content">
+                    <div class="section">
+                        <div class="section-title">Conversations</div>
+                        <div class="conversations-list" id="conversationsList"></div>
+                    </div>
+                </div>
+
+                <div class="sidebar-footer">
+                    <button class="btn btn-icon btn-full-width" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i> Déconnexion
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="main-content">
+                <div class="chat-header">
+                    <div>
+                        <div class="chat-title" id="chatTitle">Bienvenue</div>
+                        <small class="text-muted" id="chatSubtitle">Sélectionnez une conversation ou créez-en une nouvelle</small>
+                    </div>
+                    <div class="chat-actions">
+                        <button class="btn btn-icon" id="mtBenchRefreshBtn" onclick="refreshMtBench()" title="Rafraîchir les données MT-Bench">
+                            <i class="fas fa-sync"></i>
+                        </button>
+                        <button class="btn btn-icon" onclick="toggleTheme()" title="Mode sombre/clair">
+                            <i class="fas fa-moon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="chat-messages" id="chatMessages">
+                    <div class="empty-state">
+                        <i class="fas fa-atom empty-state-icon"></i>
+                        <p>Bienvenue sur QUANTUM MIND</p>
+                        <small>Votre assistant IA quantique pour explorer le futur de l'intelligence artificielle</small>
+                    </div>
+                </div>
+
+                <div class="chat-input-area">
+                    <div class="quick-prompts">
+                        <!-- Suggestions rapides supprimées pour interface plus épurée -->
+                    </div>
+                    <div class="input-group">
+                        <textarea id="messageInput" placeholder="Ex: Quels repos GitHub IA sont trending ? Derniers papers sur RAG ? Modèles français sur HF ?" onkeydown="handleInputKey(event)" rows="2" aria-label="Zone de saisie du message"></textarea>
+                        <div class="input-actions">
+                            <button class="secondary-action" onclick="clearInput()" aria-label="Effacer le message" title="Effacer le message">
+                                <i class="fas fa-eraser"></i>
+                            </button>
+                            <button onclick="sendMessage()">
+                                <i class="fas fa-paper-plane"></i> Envoyer
+                            </button>
+                        </div>
+                    </div>
+                    <div class="input-hint">
+                        <i class="fas fa-hashtag"></i>
+                        Saisissez <strong>Shift + Entrée</strong> pour une nouvelle ligne • Utilisez les suggestions rapides pour gagner du temps.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Paramètres</h2>
+                <button class="modal-close" onclick="closeModal('settingsModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label for="modelSelect">Modèle</label>
+                <select id="modelSelect" onchange="updateSettings()" aria-label="Modèle de génération">
+                    <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite ⚡</option>
+                    <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash Exp 🚀</option>
+                    <option value="gemini-pro">Gemini Pro 🧠</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="temperatureSlider">Température (0.0 - 1.0)</label>
+                <input type="range" id="temperatureSlider" min="0" max="1" step="0.1" value="0.5" onchange="updateSettings()" aria-label="Température du modèle">
+                <small class="text-muted temperature-value" id="tempValue">0.5</small>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentSessionId = null;
+        let currentUser = null;
+        let conversations = [];
+        let currentStats = null;
+        let subtitleRestoreTimer = null;
+
+        const TOOL_LABELS = {
+            google_search: '🔍 Recherche',
+            code_execution: '💻 Code',
+            arxiv_lookup: '🧪 arXiv',
+            huggingface_models: '🤗 Hugging Face',
+            ai_benchmarks: '📊 Benchmarks',
+            arxiv_digest: '📰 Digest',
+            ai_research_trends: '🧠 Tendances IA'
+        };
+
+        // Animations dynamiques au chargement
+        function initDynamicEffects() {
+            // Animation d'apparition progressive des éléments
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, observerOptions);
+
+            // Observer les messages
+            document.querySelectorAll('.message').forEach(el => {
+                el.style.opacity = '0';
+                el.style.transform = 'translateY(20px)';
+                el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                observer.observe(el);
+            });
+
+            // Effet de parallaxe sur le scroll
+            const chatMessages = document.getElementById('chatMessages');
+            if (chatMessages) {
+                chatMessages.addEventListener('scroll', () => {
+                    const scrolled = chatMessages.scrollTop;
+                    const messages = chatMessages.querySelectorAll('.message');
+                    messages.forEach((msg, index) => {
+                        const speed = 0.02 * (index % 3);
+                        msg.style.transform = `translateY(${scrolled * speed}px)`;
+                    });
+                });
+            }
+        }
+
+        // Effet ripple sur les boutons
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('.btn, button');
+            if (!btn) return;
+
+            const ripple = document.createElement('span');
+            const rect = btn.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            const x = e.clientX - rect.left - size / 2;
+            const y = e.clientY - rect.top - size / 2;
+
+            ripple.style.cssText = `
+                position: absolute;
+                width: ${size}px;
+                height: ${size}px;
+                left: ${x}px;
+                top: ${y}px;
+                background: rgba(255, 255, 255, 0.4);
+                border-radius: 50%;
+                transform: scale(0);
+                animation: ripple 0.6s ease-out;
+                pointer-events: none;
+            `;
+
+            btn.style.position = 'relative';
+            btn.style.overflow = 'hidden';
+            btn.appendChild(ripple);
+
+            setTimeout(() => ripple.remove(), 600);
+        });
+
+        // Animation CSS pour le ripple
+        const rippleStyle = document.createElement('style');
+        rippleStyle.textContent = `
+            @keyframes ripple {
+                to {
+                    transform: scale(4);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(rippleStyle);
+
+        function formatUpdateTime(date = new Date()) {
+            return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function updateConversationStats(count) {
+            const countEl = document.getElementById('statConversations');
+            const trendEl = document.getElementById('statConversationsTrend');
+
+            if (!countEl || !trendEl) {
+                return;
+            }
+
+            const safeCount = Number.isFinite(count) ? count : 0;
+            countEl.textContent = safeCount;
+            trendEl.textContent = safeCount === 0
+                ? 'Aucune conversation active'
+                : `Mis à jour à ${formatUpdateTime()}`;
+        }
+
+        function updateMessageStats(stats) {
+            const messagesEl = document.getElementById('statMessages');
+            const trendEl = document.getElementById('statMessagesTrend');
+
+            if (!messagesEl || !trendEl) {
+                return;
+            }
+
+            if (!stats) {
+                messagesEl.textContent = '0';
+                trendEl.textContent = 'Aucun message pour le moment';
+                return;
+            }
+
+            const total = stats.total_messages ?? 0;
+            messagesEl.textContent = total;
+
+            const userMessages = stats.user_messages ?? 0;
+            const assistantMessages = stats.assistant_messages ?? 0;
+            trendEl.textContent = `${userMessages} utilisateur · ${assistantMessages} assistant`;
+        }
+
+        function updateChatSubtitle() {
+            const chatSubtitle = document.getElementById('chatSubtitle');
+            if (!chatSubtitle) {
+                return;
+            }
+
+            const totalMessages = currentStats?.total_messages ?? 0;
+            chatSubtitle.textContent = totalMessages === 0
+                ? 'Commencez à échanger pour voir les insights'
+                : `${totalMessages} message${totalMessages > 1 ? 's' : ''} dans cette session`;
+
+            if (!subtitleRestoreTimer) {
+                chatSubtitle.dataset.originalSubtitle = chatSubtitle.textContent;
+            }
+        }
+
+        function flashSubtitle(message, duration = 4000) {
+            const chatSubtitle = document.getElementById('chatSubtitle');
+            if (!chatSubtitle || !message) {
+                return;
+            }
+
+            if (!chatSubtitle.dataset.originalSubtitle) {
+                chatSubtitle.dataset.originalSubtitle = chatSubtitle.textContent || '';
+            }
+
+            chatSubtitle.textContent = message;
+
+            if (subtitleRestoreTimer) {
+                clearTimeout(subtitleRestoreTimer);
+            }
+
+            subtitleRestoreTimer = window.setTimeout(() => {
+                const fallback = chatSubtitle.dataset.originalSubtitle || '';
+                chatSubtitle.textContent = fallback;
+            }, duration);
+        }
+
+        function escapeHtml(str) {
+            return str
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function renderMarkdown(content) {
+            const text = content ?? '';
+            if (typeof marked === 'undefined' || typeof marked.parse !== 'function') {
+                return escapeHtml(text);
+            }
+            return marked.parse(text);
+        }
+
+        function updateToolStats(tools) {
+            const toolsEl = document.getElementById('statTools');
+            const trendEl = document.getElementById('statToolsTrend');
+
+            if (!toolsEl || !trendEl) {
+                return;
+            }
+
+            if (!tools) {
+                toolsEl.textContent = '0';
+                trendEl.textContent = 'Aucun outil actif';
+                return;
+            }
+
+            const toolNames = Array.isArray(tools)
+                ? tools
+                : Object.keys(tools).filter(name => tools[name]);
+
+            toolsEl.textContent = toolNames.length.toString();
+
+            if (toolNames.length === 0) {
+                trendEl.textContent = 'Activez un outil pour commencer';
+                return;
+            }
+
+            const labels = toolNames.map(name => TOOL_LABELS[name] || name);
+            trendEl.textContent = labels.join(', ');
+        }
+
+        async function refreshStatistics(sessionId) {
+            if (!sessionId) {
+                currentStats = null;
+                updateMessageStats(null);
+                updateChatSubtitle();
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/statistics/${sessionId}`);
+                if (response.ok) {
+                    currentStats = await response.json();
+                    updateMessageStats(currentStats);
+                    updateChatSubtitle();
+                } else {
+                    currentStats = null;
+                    updateMessageStats(null);
+                    updateChatSubtitle();
+                }
+            } catch (error) {
+                console.error('Error refreshing statistics:', error);
+                currentStats = null;
+                updateMessageStats(null);
+                updateChatSubtitle();
+            }
+        }
+
+        async function refreshToolStats(sessionId) {
+            if (!sessionId) {
+                updateToolStats(null);
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/tools/${sessionId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    updateToolStats(data.tools);
+                } else {
+                    updateToolStats(null);
+                }
+            } catch (error) {
+                console.error('Error loading tools:', error);
+                updateToolStats(null);
+            }
+        }
+
+        function setPrompt(promptText) {
+            const input = document.getElementById('messageInput');
+            if (!input) {
+                return;
+            }
+
+            input.value = promptText;
+            input.focus();
+            input.dispatchEvent(new Event('input'));
+        }
+
+        function clearInput() {
+            const input = document.getElementById('messageInput');
+            if (!input) {
+                return;
+            }
+
+            input.value = '';
+            input.focus();
+            input.dispatchEvent(new Event('input'));
+        }
+
+        function setButtonLoading(button, isLoading) {
+            if (!button) {
+                return;
+            }
+
+            if (isLoading) {
+                if (!button.dataset.originalContent) {
+                    button.dataset.originalContent = button.innerHTML;
+                }
+                button.innerHTML = '<span class="loading" aria-hidden="true"></span>';
+                button.disabled = true;
+            } else {
+                if (button.dataset.originalContent) {
+                    button.innerHTML = button.dataset.originalContent;
+                }
+                button.disabled = false;
+            }
+        }
+
+        async function refreshMtBench() {
+            const button = document.getElementById('mtBenchRefreshBtn');
+            if (!currentUser) {
+                alert('Connectez-vous pour rafraîchir MT-Bench.');
+                return;
+            }
+            setButtonLoading(button, true);
+
+            try {
+                const response = await fetch('/api/mt-bench/refresh', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Erreur ${response.status}`);
+                }
+
+                const data = await response.json();
+                const when = data.updated_at
+                    ? new Date(data.updated_at).toLocaleString('fr-FR')
+                    : 'à l\'instant';
+                flashSubtitle(`MT-Bench rafraîchi (${when})`);
+            } catch (error) {
+                console.error('MT-Bench refresh failed:', error);
+                alert("Impossible de rafraîchir MT-Bench actuellement. Vérifiez votre session ou réessayez plus tard.");
+            } finally {
+                setButtonLoading(button, false);
+            }
+        }
+
+        function handleInputKey(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        // Initialize app
+        window.addEventListener('load', () => {
+            checkAuth();
+            if (document.body.classList.contains('dark-mode')) {
+                document.documentElement.style.colorScheme = 'dark';
+            } else {
+                document.documentElement.style.colorScheme = 'light';
+            }
+            requestAnimationFrame(() => {
+                document.body.classList.add('page-ready');
+                initDynamicEffects();
+                initAuthAnimations();
+                initTypingEffect();
+                initNeuralNetwork();
+            });
+            
+            // Ajouter indicateur de frappe lors de la saisie
+            const messageInput = document.getElementById('messageInput');
+            if (messageInput) {
+                messageInput.addEventListener('input', (e) => {
+                    // Animation du champ de saisie
+                    if (e.target.value.length > 0) {
+                        e.target.style.borderColor = 'var(--primary)';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+                    } else {
+                        e.target.style.borderColor = '';
+                        e.target.style.boxShadow = '';
+                    }
+                });
+            }
+        });
+
+        // Auth functions
+        async function login() {
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            const loginBtn = document.getElementById('loginBtn');
+            const authProgress = document.getElementById('authProgress');
+            const loginForm = document.getElementById('loginForm');
+            
+            console.log('Login attempt with username:', username);
+
+            if (!username || !password) {
+                alert('Veuillez entrer votre nom d\'utilisateur et votre mot de passe');
+                loginForm.classList.add('shake');
+                setTimeout(() => loginForm.classList.remove('shake'), 500);
+                return;
+            }
+
+            // Show progress bar
+            loginBtn.disabled = true;
+            authProgress.classList.add('active');
+
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ username, password })
+                });
+
+                console.log('Login response status:', response.status);
+                const data = await response.json();
+                console.log('Login response data:', data);
+
+                if (response.ok) {
+                    currentUser = data;
+                    showChatScreen();
+                    loadConversations();
+                } else {
+                    alert('Nom d\'utilisateur ou mot de passe incorrect: ' + (data.error || ''));
+                    loginForm.classList.add('shake');
+                    setTimeout(() => loginForm.classList.remove('shake'), 500);
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('Erreur de connexion: ' + error.message);
+                loginForm.classList.add('shake');
+                setTimeout(() => loginForm.classList.remove('shake'), 500);
+            } finally {
+                loginBtn.disabled = false;
+                authProgress.classList.remove('active');
+            }
+        }
+
+        async function register() {
+            const username = document.getElementById('registerUsername').value;
+            const password = document.getElementById('registerPassword').value;
+            const confirm = document.getElementById('registerPasswordConfirm').value;
+
+            console.log('Register attempt with username:', username);
+
+            if (!username || !password || !confirm) {
+                alert('Veuillez remplir tous les champs');
+                return;
+            }
+
+            if (password !== confirm) {
+                alert('Les mots de passe ne correspondent pas');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ username, password })
+                });
+
+                console.log('Register response status:', response.status);
+                const data = await response.json();
+                console.log('Register response data:', data);
+
+                if (response.ok) {
+                    alert('Compte créé avec succès! Connectez-vous maintenant.');
+                    toggleForm();
+                    // Clear the form
+                    document.getElementById('registerUsername').value = '';
+                    document.getElementById('registerPassword').value = '';
+                    document.getElementById('registerPasswordConfirm').value = '';
+                } else {
+                    alert(data.error || 'Erreur lors de la création du compte');
+                }
+            } catch (error) {
+                console.error('Register error:', error);
+                alert('Erreur lors de la création du compte: ' + error.message);
+            }
+        }
+
+        async function logout() {
+            try {
+                await fetch('/api/logout', { method: 'POST' });
+                currentUser = null;
+                currentSessionId = null;
+                showAuthScreen();
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        }
+
+        function checkAuth() {
+            // Check authentication status with server
+            fetch('/api/check-auth')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.authenticated) {
+                        currentUser = data;
+                        showChatScreen();
+                        loadConversations();
+                    } else {
+                        showAuthScreen();
+                    }
+                })
+                .catch(error => {
+                    console.error('Auth check failed:', error);
+                    showAuthScreen();
+                });
+        }
+
+        // UI functions
+        function showAuthScreen() {
+            const authScreen = document.getElementById('authScreen');
+            const chatScreen = document.getElementById('chatScreen');
+            authScreen.classList.remove('hidden');
+            authScreen.style.display = 'flex';
+            chatScreen.classList.add('hidden');
+            chatScreen.style.display = 'none';
+        }
+
+        function showChatScreen() {
+            const authScreen = document.getElementById('authScreen');
+            const chatScreen = document.getElementById('chatScreen');
+            authScreen.classList.add('hidden');
+            authScreen.style.display = 'none';
+            chatScreen.classList.remove('hidden');
+            chatScreen.style.display = 'flex';
+        }
+
+        function toggleForm() {
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const authCard = document.querySelector('.auth-card');
+            const showingLogin = !loginForm.classList.contains('hidden');
+            
+            // Animation de flip
+            authCard.style.transform = 'rotateY(90deg)';
+            authCard.style.opacity = '0.5';
+            
+            setTimeout(() => {
+                if (showingLogin) {
+                    loginForm.classList.add('hidden');
+                    loginForm.style.display = 'none';
+                    registerForm.classList.remove('hidden');
+                    registerForm.style.display = 'block';
+                } else {
+                    registerForm.classList.add('hidden');
+                    registerForm.style.display = 'none';
+                    loginForm.classList.remove('hidden');
+                    loginForm.style.display = 'block';
+                }
+                
+                setTimeout(() => {
+                    authCard.style.transform = 'rotateY(0deg)';
+                    authCard.style.opacity = '1';
+                }, 50);
+            }, 300);
+        }
+
+        function initAuthAnimations() {
+            // Animation d'entrée pour les champs de formulaire
+            const inputs = document.querySelectorAll('.input-interactive');
+            inputs.forEach((input, index) => {
+                input.style.animationDelay = `${index * 0.1}s`;
+                
+                // Effet de focus amélioré
+                input.addEventListener('focus', function() {
+                    this.parentElement.classList.add('focused');
+                    createFocusRipple(this);
+                });
+                
+                input.addEventListener('blur', function() {
+                    this.parentElement.classList.remove('focused');
+                });
+                
+                // Validation en temps réel
+                input.addEventListener('input', function() {
+                    if (this.value.length > 0) {
+                        this.classList.add('has-value');
+                    } else {
+                        this.classList.remove('has-value');
+                    }
+                });
+            });
+            
+            // Animation des boutons
+            const authButtons = document.querySelectorAll('.btn-auth');
+            authButtons.forEach(btn => {
+                btn.addEventListener('mouseenter', function(e) {
+                    const ripple = document.createElement('span');
+                    ripple.className = 'button-ripple';
+                    this.appendChild(ripple);
+                    
+                    setTimeout(() => ripple.remove(), 600);
+                });
+            });
+        }
+
+        function createFocusRipple(element) {
+            const ripple = document.createElement('div');
+            ripple.className = 'focus-ripple';
+            element.parentElement.appendChild(ripple);
+            
+            setTimeout(() => ripple.remove(), 600);
+        }
+
+        // Typing Effect for Title
+        function initTypingEffect() {
+            const titleElement = document.getElementById('typingTitle');
+            const sloganElement = document.getElementById('authSlogan');
+            if (!titleElement) return;
+            
+            const text = 'QUANTUM MIND';
+            const slogans = [
+                '🧠 Intelligence Artificielle de Nouvelle Génération',
+                '🚀 Explorez le Futur de l\'IA',
+                '⚡ Recherche IA Avancée',
+                '🌌 Votre Portail vers l\'Innovation IA'
+            ];
+            const randomSlogan = slogans[Math.floor(Math.random() * slogans.length)];
+            
+            let index = 0;
+            
+            function typeChar() {
+                if (index < text.length) {
+                    titleElement.textContent += text.charAt(index);
+                    index++;
+                    setTimeout(typeChar, 100);
+                } else if (sloganElement) {
+                    sloganElement.textContent = randomSlogan;
+                }
+            }
+            
+            typeChar();
+        }
+
+        // Toggle Password Visibility
+        function togglePasswordVisibility(inputId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(inputId + '-icon');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        // Neural Network Background
+        function initNeuralNetwork() {
+            const canvas = document.getElementById('neuralCanvas');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            
+            const particles = [];
+            const particleCount = 50;
+            const maxDistance = 150;
+            
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * canvas.width;
+                    this.y = Math.random() * canvas.height;
+                    this.vx = (Math.random() - 0.5) * 0.5;
+                    this.vy = (Math.random() - 0.5) * 0.5;
+                    this.radius = 2;
+                }
+                
+                update() {
+                    this.x += this.vx;
+                    this.y += this.vy;
+                    
+                    if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+                    if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+                }
+                
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(99, 102, 241, 0.6)';
+                    ctx.fill();
+                }
+            }
+            
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+            
+            function connectParticles() {
+                for (let i = 0; i < particles.length; i++) {
+                    for (let j = i + 1; j < particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance < maxDistance) {
+                            const opacity = (1 - distance / maxDistance) * 0.5;
+                            ctx.beginPath();
+                            ctx.strokeStyle = `rgba(99, 102, 241, ${opacity})`;
+                            ctx.lineWidth = 1;
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.stroke();
+                        }
+                    }
+                }
+            }
+            
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                particles.forEach(particle => {
+                    particle.update();
+                    particle.draw();
+                });
+                
+                connectParticles();
+                requestAnimationFrame(animate);
+            }
+            
+            animate();
+            
+            window.addEventListener('resize', () => {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            });
+        }
+
+        // Password Strength Checker
+        function checkPasswordStrength(password) {
+            const strengthIndicator = document.getElementById('passwordStrength');
+            const strengthFill = document.getElementById('strengthFill');
+            const strengthText = document.getElementById('strengthText');
+            
+            if (!password) {
+                strengthIndicator.classList.remove('active');
+                return;
+            }
+            
+            strengthIndicator.classList.add('active');
+            
+            let strength = 0;
+            if (password.length >= 8) strength++;
+            if (password.length >= 12) strength++;
+            if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+            if (/[0-9]/.test(password)) strength++;
+            if (/[^a-zA-Z0-9]/.test(password)) strength++;
+            
+            strengthFill.className = 'strength-fill';
+            strengthText.className = 'strength-text';
+            
+            if (strength <= 2) {
+                strengthFill.classList.add('weak');
+                strengthText.classList.add('weak');
+                strengthText.textContent = '🔴 Faible';
+            } else if (strength <= 4) {
+                strengthFill.classList.add('medium');
+                strengthText.classList.add('medium');
+                strengthText.textContent = '🟡 Moyen';
+            } else {
+                strengthFill.classList.add('strong');
+                strengthText.classList.add('strong');
+                strengthText.textContent = '🟢 Fort';
+            }
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem('theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+        }
+
+        // Conversation functions
+        async function newConversation() {
+            try {
+                const response = await fetch('/api/conversations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: document.getElementById('modelSelect')?.value || 'gemini-2.5-flash-lite',
+                        temperature: parseFloat(document.getElementById('temperatureSlider')?.value || 0.5)
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    currentSessionId = data.session_id;
+                    await loadConversations();
+                    await loadConversation(currentSessionId);
+                }
+            } catch (error) {
+                console.error('Error creating conversation:', error);
+            }
+        }
+
+        async function loadConversations() {
+            try {
+                const response = await fetch('/api/conversations');
+                if (response.ok) {
+                    const data = await response.json();
+                    conversations = data.conversations;
+                    renderConversations();
+                    updateConversationStats(data.count ?? conversations.length);
+
+                    if (!currentSessionId) {
+                        updateMessageStats(null);
+                        updateToolStats(null);
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading conversations:', error);
+            }
+        }
+
+        function renderConversations() {
+            const list = document.getElementById('conversationsList');
+            list.innerHTML = '';
+
+            conversations.forEach((conv, index) => {
+                const div = document.createElement('div');
+                div.className = 'conversation-item' + (conv.session_id === currentSessionId ? ' active' : '');
+                
+                // Générer un nom élégant basé sur la date
+                const convDate = new Date(conv.created_at || Date.now());
+                const today = new Date();
+                const yesterday = new Date(today);
+                yesterday.setDate(yesterday.getDate() - 1);
+                
+                let displayName;
+                if (convDate.toDateString() === today.toDateString()) {
+                    displayName = `💬 Session ${convDate.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}`;
+                } else if (convDate.toDateString() === yesterday.toDateString()) {
+                    displayName = `📅 Hier ${convDate.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}`;
+                } else {
+                    displayName = `📆 ${convDate.toLocaleDateString('fr-FR', {day: '2-digit', month: 'short'})} ${convDate.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}`;
+                }
+                
+                div.innerHTML = `
+                    <span>${displayName}</span>
+                    <button class="conversation-delete" onclick="deleteConversation('${conv.session_id}')">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                `;
+                div.addEventListener('click', () => loadConversation(conv.session_id));
+                list.appendChild(div);
+            });
+        }
+
+        async function loadConversation(sessionId) {
+            currentSessionId = sessionId;
+            try {
+                const response = await fetch(`/api/history/${sessionId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    currentStats = data.statistics || null;
+                    renderMessages(data.messages || []);
+                    updateMessageStats(currentStats);
+                    updateChatSubtitle();
+
+                    const chatTitle = document.getElementById('chatTitle');
+                    if (chatTitle) {
+                        chatTitle.textContent = 'Conversation';
+                    }
+
+                    const modelSelect = document.getElementById('modelSelect');
+                    const temperatureSlider = document.getElementById('temperatureSlider');
+                    if (modelSelect && data.model) {
+                        modelSelect.value = data.model;
+                    }
+                    if (temperatureSlider && typeof data.temperature === 'number') {
+                        temperatureSlider.value = data.temperature;
+                        const tempValue = document.getElementById('tempValue');
+                        if (tempValue) {
+                            tempValue.textContent = data.temperature.toString();
+                        }
+                    }
+
+                    await refreshToolStats(sessionId);
+                }
+            } catch (error) {
+                console.error('Error loading conversation:', error);
+            }
+            renderConversations();
+        }
+
+        function renderMessages(messages) {
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML = '';
+
+            if (messages.length === 0) {
+                chatMessages.innerHTML = '<div class="empty-state"><p>Commencez une nouvelle conversation</p></div>';
+                return;
+            }
+
+            messages.forEach(msg => {
+                const div = document.createElement('div');
+                div.className = 'message ' + msg.role;
+                div.innerHTML = `
+                    <div class="message-avatar">${msg.role === 'user' ? '👤' : '🤖'}</div>
+                    <div class="message-content">${renderMarkdown(msg.content)}</div>
+                `;
+                chatMessages.appendChild(div);
+            });
+
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+
+            if (!message || !currentSessionId) {
+                alert('Sélectionnez une conversation d\'abord');
+                return;
+            }
+
+            input.value = '';
+            input.focus();
+
+            // Add user message to display
+            const chatMessages = document.getElementById('chatMessages');
+            const userDiv = document.createElement('div');
+            userDiv.className = 'message user';
+            userDiv.innerHTML = `
+                <div class="message-avatar">👤</div>
+                <div class="message-content">${renderMarkdown(message)}</div>
+            `;
+            chatMessages.appendChild(userDiv);
+
+            // Indicateur de frappe animé
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message assistant';
+            typingDiv.innerHTML = `
+                <div class="message-avatar">🤖</div>
+                <div class="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            `;
+            chatMessages.appendChild(typingDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            const removeTypingPlaceholder = () => {
+                if (typingDiv && typingDiv.parentNode) {
+                    typingDiv.parentNode.removeChild(typingDiv);
+                }
+            };
+
+            try {
+                const response = await fetch(`/api/chat/${currentSessionId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    removeTypingPlaceholder();
+                    const assistantDiv = document.createElement('div');
+                    assistantDiv.className = 'message assistant';
+                    assistantDiv.innerHTML = `
+                        <div class="message-avatar">🤖</div>
+                        <div class="message-content">${renderMarkdown(data.message)}</div>
+                    `;
+                    chatMessages.appendChild(assistantDiv);
+                    await refreshStatistics(currentSessionId);
+                } else {
+                    removeTypingPlaceholder();
+                    alert('Réponse indisponible pour le moment, réessayez plus tard.');
+                }
+            } catch (error) {
+                removeTypingPlaceholder();
+                console.error('Error sending message:', error);
+                alert('Erreur lors de l\'appel au serveur.');
+            }
+
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        async function deleteConversation(sessionId) {
+            if (!confirm('Êtes-vous sûr de vouloir supprimer cette conversation?')) return;
+
+            try {
+                const response = await fetch(`/api/delete/${sessionId}`, { method: 'DELETE' });
+                if (response.ok) {
+                    if (currentSessionId === sessionId) {
+                        currentSessionId = null;
+                        document.getElementById('chatMessages').innerHTML = 
+                            '<div class="empty-state"><p>Sélectionnez une conversation</p></div>';
+                        refreshStatistics(null);
+                        updateToolStats(null);
+                    }
+                    loadConversations();
+                }
+            } catch (error) {
+                console.error('Error deleting conversation:', error);
+            }
+        }
+
+        // Settings
+        function showSettings() {
+            document.getElementById('settingsModal').classList.add('active');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        function updateSettings() {
+            const tempSlider = document.getElementById('temperatureSlider');
+            document.getElementById('tempValue').textContent = tempSlider.value;
+
+            if (currentSessionId) {
+                fetch(`/api/settings/${currentSessionId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        model: document.getElementById('modelSelect').value,
+                        temperature: parseFloat(tempSlider.value)
+                    })
+                }).catch(error => console.error('Error updating settings:', error));
+            }
+        }
+
+        // Load theme preference
+        if (localStorage.getItem('theme') === 'dark') {
+            document.body.classList.add('dark-mode');
+        }
+    </script>
+</body>
+</html>

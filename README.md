@@ -1,6 +1,6 @@
 # 🧠 QUANTUM MIND
 
-Assistant IA avancé spécialisé en **recherche d'intelligence artificielle**, propulsé par **Google Gemini** avec système d'outils multi-sources unique au monde.
+Agent conversationnel spécialisé en **recherche d'intelligence artificielle**, propulsé par **Google Gemini** avec système d'outils multi-sources unique au monde.
 
 ## ✨ Fonctionnalités Principales
 
